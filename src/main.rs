@@ -106,10 +106,6 @@ fn main() -> eyre::Result<()> {
         );
         assert!(ascii.iter().all(|row| row.len() == ascii[0].len()));
 
-        let img_ascii =
-            img_to_ascii::convert::char_rows_to_color_bitmap(&ascii, &font, &frame, invert);
-        img_ascii.save("/tmp/1.png")?;
-
         print!("\x1b[2J\x1b[H"); // clear the terminal
         for row in &ascii {
             for &ch in row {
