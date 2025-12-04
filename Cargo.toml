@@ -1,0 +1,12 @@
+[package]
+name = "bad-apple-ascii"
+version = "0.1.0"
+edition = "2024"
+
+[dependencies]
+color-eyre = "0.6"
+ffmpeg-next = "8.0"
+# NOTE: `image-to-ascii` depends on `image` 0.24
+image = { version = "0.24", default-features = false }
+image-to-ascii = { git = "https://github.com/kpberry/image-to-ascii.git", branch = "main" }
+terminal_size = "0.4"
