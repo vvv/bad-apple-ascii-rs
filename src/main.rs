@@ -96,7 +96,7 @@ fn main() -> eyre::Result<()> {
             println!();
         }
 
-        thread::sleep(Duration::from_secs_f32(1. / 30.));
+        thread::sleep(Duration::from_secs_f32(1. / 60.));
     }
 
     Ok(())
