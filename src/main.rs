@@ -1,4 +1,8 @@
-use std::{thread, time::Duration};
+use std::{
+    io::{self, Write as _},
+    thread,
+    time::Duration,
+};
 
 use color_eyre::eyre::{self, eyre};
 use ffmpeg_next::{self as ffmpeg, format::Pixel, frame::Video, software::scaling::Flags};
@@ -113,6 +117,7 @@ fn main() -> eyre::Result<()> {
             }
             println!();
         }
+        io::stdout().flush()?;
 
         thread::sleep(frame_rate.period());
     }
