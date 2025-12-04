@@ -5,7 +5,24 @@ use ffmpeg_next::{self as ffmpeg, format::Pixel, frame::Video, software::scaling
 use img_to_ascii::image::LumaImage;
 use terminal_size::{Width, terminal_size};
 
-fn extract_frames(path: &str) -> eyre::Result<Vec<image::DynamicImage>> {
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[allow(dead_code)]
+enum FrameRate {
+    Fps30,
+    Fps60,
+}
+
+impl FrameRate {
+    fn period(&self) -> Duration {
+        let fps: u8 = match self {
+            Self::Fps30 => 30,
+            Self::Fps60 => 60,
+        };
+        Duration::from_secs_f32(f32::from(fps).recip())
+    }
+}
+
+fn extract_frames(path: &str, frame_rate: FrameRate) -> eyre::Result<Vec<image::DynamicImage>> {
     ffmpeg::init()?;
     ffmpeg::log::set_level(ffmpeg::log::Level::Error); // suppress Info and Warn
 
@@ -29,6 +46,7 @@ fn extract_frames(path: &str) -> eyre::Result<Vec<image::DynamicImage>> {
         Flags::BILINEAR,
     )?;
 
+    let mut frame_idx = 0;
     let mut frames = Vec::new();
 
     let video_stream_index = input.index();
@@ -39,7 +57,12 @@ fn extract_frames(path: &str) -> eyre::Result<Vec<image::DynamicImage>> {
         decoder.send_packet(&packet)?;
 
         let mut decoded = Video::empty();
+
         while decoder.receive_frame(&mut decoded).is_ok() {
+            frame_idx += 1;
+            if frame_rate == FrameRate::Fps30 && frame_idx % 2 == 1 {
+                continue;
+            }
             let mut frame = Video::empty();
             scaler.run(&decoded, &mut frame)?;
 
@@ -69,9 +92,8 @@ fn main() -> eyre::Result<()> {
     let brightness_scale = 0.25;
     let edge_brightness_scale = 1.;
 
-    for frame in extract_frames("bad-apple.mp4")? {
-        //XXX let frame = &frames[2798];
-
+    let frame_rate = FrameRate::Fps30;
+    for frame in extract_frames("bad-apple.mp4", frame_rate)? {
         let ascii = img_to_ascii::convert::img_to_char_rows(
             &font,
             &LumaImage::naive_grayscale_from(&frame),
@@ -96,7 +118,7 @@ fn main() -> eyre::Result<()> {
             println!();
         }
 
-        thread::sleep(Duration::from_secs_f32(1. / 60.));
+        thread::sleep(frame_rate.period());
     }
 
     Ok(())
